@@ -1,0 +1,83 @@
+# ── Dependencies ──────────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp
+.pnp.js
+
+# ── Python & Django ───────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.sqlite3
+*.sqlite3-journal
+*.sqlite
+.pytest_cache/
+.ruff_cache/
+
+# ── Media & Uploads ───────────────────────────────────────────────────────────
+backend/media/*
+!backend/media/.gitkeep
+
+# ── Environment Variables ──────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+!frontend/.env.production.example
+
+# ── Production Builds ──────────────────────────────────────────────────────────
+frontend/build/
+dist/
+build/
+.vercel
+
+# ── Logs ───────────────────────────────────────────────────────────────────────
+*.log
+logs/
+backend/logs/*.log
+
+# ── IDE / Editor / System ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+.opencode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ── Test Coverage ──────────────────────────────────────────────────────────────
+coverage/
+backend/coverage/
+.vitest/
+
+# ── Temporary, Scratch & Agent Outputs ─────────────────────────────────────────
+.agent/
+.agents/
+.orchids/
+.freebuff/
+.kilo/
+brag-output*/
+graphify-out/
+UIs/
+docs/
+*.csv
+Security_check.csv
