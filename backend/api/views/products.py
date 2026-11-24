@@ -11,7 +11,15 @@ from api.permissions import IsSeller
 @api_view(['GET', 'POST'])
 def products_list(request):
     if request.method == 'GET':
-        qs = Product.objects.filter(is_active=True)
+        qs = Product.objects.filter(is_active=True).select_related('store')
+
+        store_id = request.GET.get('store') or request.GET.get('storeId') or request.GET.get('store_id')
+        if store_id:
+            qs = qs.filter(store_id=store_id)
+
+        seller_id = request.GET.get('seller') or request.GET.get('sellerId') or request.GET.get('seller_id')
+        if seller_id:
+            qs = qs.filter(seller_id=seller_id)
 
         category = request.GET.get('category')
         search = request.GET.get('search')
@@ -97,13 +105,13 @@ def products_list(request):
 
 @api_view(['GET'])
 def featured_products(request):
-    products = Product.objects.filter(is_active=True).order_by('-rating')[:8]
+    products = Product.objects.filter(is_active=True).select_related('store').order_by('-rating')[:8]
     return Response({'success': True, 'products': ProductSerializer(products, many=True).data})
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsSeller])
 def get_my_products(request):
-    qs = Product.objects.filter(seller_id=request.user.id).order_by('-created_at')
+    qs = Product.objects.filter(seller_id=request.user.id).select_related('store').order_by('-created_at')
     page = max(1, int(request.GET.get('page', 1)))
     limit = max(1, min(100, int(request.GET.get('limit', 20))))
     start = (page - 1) * limit
@@ -169,7 +177,7 @@ def export_products(request):
 @api_view(['GET', 'PUT', 'DELETE'])
 def product_detail(request, pk):
     try:
-        product = Product.objects.get(pk=pk)
+        product = Product.objects.select_related('store').get(pk=pk)
     except Product.DoesNotExist:
         return Response({'success': False, 'message': 'Product not found'}, status=404)
 
@@ -196,7 +204,7 @@ def product_detail(request, pk):
 @api_view(['GET', 'POST'])
 def product_reviews(request, pk):
     try:
-        product = Product.objects.get(pk=pk)
+        product = Product.objects.select_related('store').get(pk=pk)
     except Product.DoesNotExist:
         return Response({'success': False, 'message': 'Product not found'}, status=404)
 

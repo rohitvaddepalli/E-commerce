@@ -66,7 +66,14 @@ const Checkout = () => {
     const fetchSettings = async () => {
         try {
             const response = await settingsAPI.getSettings();
-            setSettings(response.data.settings);
+            const s = response.data?.settings;
+            if (s) {
+                setSettings({
+                    taxRate: Number(s.taxRate ?? s.tax_rate ?? 8),
+                    shippingFee: Number(s.shippingFee ?? s.shipping_fee ?? 10),
+                    ...s,
+                });
+            }
         } catch (error) {
             logger.error('Error fetching settings:', error);
             // Use default values if fetch fails
@@ -85,19 +92,20 @@ const Checkout = () => {
         setLoading(true);
 
         try {
-            const subtotal = getCartTotal();
-            const shipping = settings.shippingFee;
-            const tax = subtotal * (settings.taxRate / 100);
+            const shipping = Number(settings?.shippingFee ?? settings?.shipping_fee ?? 10);
+            const taxRate = Number(settings?.taxRate ?? settings?.tax_rate ?? 8);
+            const subtotal = Number(getCartTotal() || 0);
+            const tax = subtotal * (taxRate / 100);
             const total = subtotal + shipping + tax;
 
             const orderData = {
                 items: cartItems.map((item) => ({
-                    product: item._id,
+                    product: item._id || item.id,
                     name: item.name,
                     price: calculateItemPrice(item), // Use discounted price
                     quantity: item.quantity,
-                    image: item.images?.[0],
-                    store: item.store?._id,
+                    image: item.images?.[0] || item.image || '',
+                    store: item.store?._id || item.store?.id || item.store,
                 })),
                 shippingAddress: {
                     name: formData.name,
@@ -177,16 +185,17 @@ const Checkout = () => {
     // instead of re-running calculateItemPrice for every render.
     // Must be placed before any early returns to comply with Rules of Hooks.
     const itemPrices = useMemo(
-        () => Object.fromEntries(cartItems.map((item) => [item._id, calculateItemPrice(item)])),
+        () => Object.fromEntries(cartItems.map((item) => [item._id || item.id, calculateItemPrice(item)])),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [cartItems]
     );
 
     if (cartItems.length === 0) return null;
 
-    const subtotal = getCartTotal();
-    const shipping = settings.shippingFee;
-    const tax = subtotal * (settings.taxRate / 100);
+    const shipping = Number(settings?.shippingFee ?? settings?.shipping_fee ?? 10);
+    const taxRate = Number(settings?.taxRate ?? settings?.tax_rate ?? 8);
+    const subtotal = Number(getCartTotal() || 0);
+    const tax = subtotal * (taxRate / 100);
     const total = subtotal + shipping + tax;
 
 
@@ -420,35 +429,39 @@ const Checkout = () => {
                     <div className="order-summary">
                         <h2>Order Summary</h2>
                         <div className="summary-items">
-                            {cartItems.map((item) => (
-                                <div key={item._id} className="summary-item">
-                                    <img
-                                        src={item.images?.[0] || DEFAULT_PRODUCT_IMAGE}
-                                        alt={item.name}
-                                        loading="lazy"
-                                        decoding="async"
-                                        onError={(e) => (e.target.src = DEFAULT_PRODUCT_IMAGE)}
-                                    />
-                                    <div className="summary-item-details">
-                                        <h4>{item.name}</h4>
-                                        <span>Qty: {item.quantity}</span>
-                                        {itemPrices[item._id] < item.price && (
-                                            <span
-                                                style={{
-                                                    fontSize: '0.8rem',
-                                                    color: '#059669',
-                                                    display: 'block',
-                                                }}
-                                            >
-                                                Bulk Discount Applied
-                                            </span>
-                                        )}
+                            {cartItems.map((item) => {
+                                const itemId = item._id || item.id;
+                                const itemPrice = itemPrices[itemId] ?? item.price;
+                                return (
+                                    <div key={itemId} className="summary-item">
+                                        <img
+                                            src={item.images?.[0] || DEFAULT_PRODUCT_IMAGE}
+                                            alt={item.name}
+                                            loading="lazy"
+                                            decoding="async"
+                                            onError={(e) => (e.target.src = DEFAULT_PRODUCT_IMAGE)}
+                                        />
+                                        <div className="summary-item-details">
+                                            <h4>{item.name}</h4>
+                                            <span>Qty: {item.quantity}</span>
+                                            {itemPrice < item.price && (
+                                                <span
+                                                    style={{
+                                                        fontSize: '0.8rem',
+                                                        color: '#059669',
+                                                        display: 'block',
+                                                    }}
+                                                >
+                                                    Bulk Discount Applied
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="summary-item-price">
+                                            ₹{(itemPrice * item.quantity).toFixed(2)}
+                                        </span>
                                     </div>
-                                    <span className="summary-item-price">
-                                        ₹{(itemPrices[item._id] * item.quantity).toFixed(2)}
-                                    </span>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         <div className="summary-divider"></div>
@@ -462,7 +475,7 @@ const Checkout = () => {
                             <span>₹{shipping.toFixed(2)}</span>
                         </div>
                         <div className="summary-row">
-                            <span>Tax ({settings.taxRate}%)</span>
+                            <span>Tax ({taxRate}%)</span>
                             <span>₹{tax.toFixed(2)}</span>
                         </div>
 

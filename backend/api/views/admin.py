@@ -125,10 +125,18 @@ def admin_settings(request):
     elif request.method == 'PUT':
         if 'tax_rate' in request.data:
             settings.tax_rate = float(request.data['tax_rate'])
+        elif 'taxRate' in request.data:
+            settings.tax_rate = float(request.data['taxRate'])
+
         if 'shipping_fee' in request.data:
             settings.shipping_fee = float(request.data['shipping_fee'])
+        elif 'shippingFee' in request.data:
+            settings.shipping_fee = float(request.data['shippingFee'])
+
         if 'fixed_fee_per_order' in request.data:
             settings.fixed_fee_per_order = float(request.data['fixed_fee_per_order'])
+        elif 'fixedFeePerOrder' in request.data:
+            settings.fixed_fee_per_order = float(request.data['fixedFeePerOrder'])
         settings.updated_by = request.user
         settings.save()
         return Response({'success': True, 'settings': SettingsSerializer(settings).data})

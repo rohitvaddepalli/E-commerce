@@ -80,23 +80,24 @@ export const CartProvider = ({ children }) => {
 
 
     const addToCart = (product, quantity = 1) => {
+        const prodId = product._id || product.id;
         setCartItems((prevItems) => {
-            const existingItem = prevItems.find((item) => item._id === product._id);
+            const existingItem = prevItems.find((item) => (item._id || item.id) === prodId);
 
             if (existingItem) {
                 return prevItems.map((item) =>
-                    item._id === product._id
+                    (item._id || item.id) === prodId
                         ? { ...item, quantity: item.quantity + quantity }
                         : item
                 );
             } else {
-                return [...prevItems, { ...product, quantity }];
+                return [...prevItems, { ...product, quantity, _id: prodId, id: prodId }];
             }
         });
     };
 
     const removeFromCart = (productId) => {
-        setCartItems((prevItems) => prevItems.filter((item) => item._id !== productId));
+        setCartItems((prevItems) => prevItems.filter((item) => (item._id || item.id) !== productId));
     };
 
     const updateQuantity = (productId, quantity) => {
@@ -106,7 +107,7 @@ export const CartProvider = ({ children }) => {
         }
 
         setCartItems((prevItems) =>
-            prevItems.map((item) => (item._id === productId ? { ...item, quantity } : item))
+            prevItems.map((item) => ((item._id || item.id) === productId ? { ...item, quantity } : item))
         );
     };
 

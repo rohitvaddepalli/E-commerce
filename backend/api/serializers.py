@@ -31,9 +31,18 @@ class StoreSerializer(serializers.ModelSerializer):
             'businessHours', 'createdAt'
         ]
 
+class StoreMinimalSerializer(serializers.ModelSerializer):
+    _id = serializers.UUIDField(source='id', read_only=True)
+
+    class Meta:
+        model = Store
+        fields = ['_id', 'name', 'logo']
+
+
 class ProductSerializer(serializers.ModelSerializer):
     _id = serializers.UUIDField(source='id', read_only=True)
-    store = serializers.UUIDField(source='store_id', read_only=True)
+    store = StoreMinimalSerializer(read_only=True)
+    storeId = serializers.UUIDField(source='store_id', read_only=True)
     seller = serializers.UUIDField(source='seller_id', read_only=True)
     compareAtPrice = serializers.FloatField(source='compare_at_price', required=False, allow_null=True)
     reviewCount = serializers.IntegerField(source='review_count', read_only=True)
@@ -47,7 +56,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            '_id', 'store', 'seller', 'name', 'description', 'price', 'compareAtPrice',
+            '_id', 'store', 'storeId', 'seller', 'name', 'description', 'price', 'compareAtPrice',
             'category', 'subcategory', 'brand', 'images', 'stock', 'rating', 'reviewCount',
             'tags', 'specifications', 'variants', 'lowStockThreshold', 'bulkDiscounts',
             'isActive', 'createdAt', 'updatedAt'
@@ -109,9 +118,17 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
 
 class SettingsSerializer(serializers.ModelSerializer):
+    taxRate = serializers.FloatField(source='tax_rate', read_only=True)
+    shippingFee = serializers.FloatField(source='shipping_fee', read_only=True)
+    fixedFeePerOrder = serializers.FloatField(source='fixed_fee_per_order', read_only=True)
+
     class Meta:
         model = Settings
-        fields = ['tax_rate', 'shipping_fee', 'fixed_fee_per_order', 'updated_at']
+        fields = [
+            'tax_rate', 'shipping_fee', 'fixed_fee_per_order',
+            'taxRate', 'shippingFee', 'fixedFeePerOrder',
+            'updated_at'
+        ]
 
 class MessageSerializer(serializers.ModelSerializer):
     _id = serializers.UUIDField(source='id', read_only=True)

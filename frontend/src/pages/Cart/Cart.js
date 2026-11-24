@@ -28,7 +28,14 @@ const Cart = () => {
     const fetchSettings = async () => {
         try {
             const response = await settingsAPI.getSettings();
-            setSettings(response.data.settings);
+            const s = response.data?.settings;
+            if (s) {
+                setSettings({
+                    taxRate: Number(s.taxRate ?? s.tax_rate ?? 8),
+                    shippingFee: Number(s.shippingFee ?? s.shipping_fee ?? 10),
+                    ...s,
+                });
+            }
         } catch (error) {
             logger.error('Error fetching settings:', error);
             // Use default values if fetch fails
@@ -60,6 +67,12 @@ const Cart = () => {
         );
     }
 
+    const shippingFee = Number(settings?.shippingFee ?? settings?.shipping_fee ?? 10);
+    const taxRate = Number(settings?.taxRate ?? settings?.tax_rate ?? 8);
+    const subtotal = Number(getCartTotal() || 0);
+    const taxAmount = subtotal * (taxRate / 100);
+    const grandTotal = subtotal + shippingFee + taxAmount;
+
     return (
         <div className="page-container">
             <div className="container">
@@ -70,115 +83,112 @@ const Cart = () => {
 
                 <div className="cart-layout">
                     <div className="cart-items">
-                        {cartItems.map((item) => (
-                            <div key={item._id} className="cart-item">
-                                <img
-                                    src={item.images?.[0] || DEFAULT_PRODUCT_IMAGE}
-                                    alt={item.name}
-                                    className="cart-item-image"
-                                    onError={(e) => (e.target.src = DEFAULT_PRODUCT_IMAGE)}
-                                />
-                                <div className="cart-item-details">
-                                    <h3>{item.name}</h3>
-                                    <p className="cart-item-store">{item.store?.name}</p>
-                                    <div className="cart-item-price-container">
-                                        {calculateItemPrice(item) < item.price ? (
-                                            <>
-                                                <span
-                                                    className="cart-item-price original"
-                                                    style={{
-                                                        textDecoration: 'line-through',
-                                                        color: '#9ca3af',
-                                                        fontSize: '0.9rem',
-                                                        marginRight: '8px',
-                                                    }}
-                                                >
-                                                    ₹{item.price}
-                                                </span>
-                                                <span
-                                                    className="cart-item-price discounted"
-                                                    style={{ color: '#dc2626', fontWeight: 'bold' }}
-                                                >
-                                                    ₹{calculateItemPrice(item).toFixed(2)}
-                                                </span>
-                                                <div
-                                                    style={{
-                                                        fontSize: '0.8rem',
-                                                        color: '#059669',
-                                                        marginTop: '4px',
-                                                    }}
-                                                >
-                                                    Bulk Discount Applied!
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <span className="cart-item-price">₹{item.price}</span>
-                                        )}
+                        {cartItems.map((item) => {
+                            const itemId = item._id || item.id;
+                            const itemPrice = calculateItemPrice(item);
+                            return (
+                                <div key={itemId} className="cart-item">
+                                    <img
+                                        src={item.images?.[0] || DEFAULT_PRODUCT_IMAGE}
+                                        alt={item.name}
+                                        className="cart-item-image"
+                                        onError={(e) => (e.target.src = DEFAULT_PRODUCT_IMAGE)}
+                                    />
+                                    <div className="cart-item-details">
+                                        <h3>{item.name}</h3>
+                                        <p className="cart-item-store">{item.store?.name}</p>
+                                        <div className="cart-item-price-container">
+                                            {itemPrice < item.price ? (
+                                                <>
+                                                    <span
+                                                        className="cart-item-price original"
+                                                        style={{
+                                                            textDecoration: 'line-through',
+                                                            color: '#9ca3af',
+                                                            fontSize: '0.9rem',
+                                                            marginRight: '8px',
+                                                        }}
+                                                    >
+                                                        ₹{item.price}
+                                                    </span>
+                                                    <span
+                                                        className="cart-item-price discounted"
+                                                        style={{ color: '#dc2626', fontWeight: 'bold' }}
+                                                    >
+                                                        ₹{itemPrice.toFixed(2)}
+                                                    </span>
+                                                    <div
+                                                        style={{
+                                                            fontSize: '0.8rem',
+                                                            color: '#059669',
+                                                            marginTop: '4px',
+                                                        }}
+                                                    >
+                                                        Bulk Discount Applied!
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <span className="cart-item-price">₹{item.price}</span>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="cart-item-quantity">
+                                    <div className="cart-item-quantity">
+                                        <button
+                                            onClick={() => updateQuantity(itemId, item.quantity - 1)}
+                                            className="quantity-btn"
+                                        >
+                                            -
+                                        </button>
+                                        <span>{item.quantity}</span>
+                                        <button
+                                            onClick={() => updateQuantity(itemId, item.quantity + 1)}
+                                            className="quantity-btn"
+                                            disabled={item.quantity >= item.stock}
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    <div className="cart-item-total">
+                                        ₹{(itemPrice * item.quantity).toFixed(2)}
+                                    </div>
                                     <button
-                                        onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                                        className="quantity-btn"
+                                        onClick={() => {
+                                            removeFromCart(itemId);
+                                            toast.success(`${item.name} removed from cart`);
+                                        }}
+                                        className="cart-item-remove"
                                     >
-                                        -
-                                    </button>
-                                    <span>{item.quantity}</span>
-                                    <button
-                                        onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                                        className="quantity-btn"
-                                        disabled={item.quantity >= item.stock}
-                                    >
-                                        +
+                                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                            <path
+                                                d="M6 4V2a1 1 0 011-1h6a1 1 0 011 1v2m3 0H3m2 0v12a2 2 0 002 2h6a2 2 0 002-2V4m-10 4v8m4-8v8"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                            />
+                                        </svg>
                                     </button>
                                 </div>
-                                <div className="cart-item-total">
-                                    ₹{(calculateItemPrice(item) * item.quantity).toFixed(2)}
-                                </div>
-                                <button
-                                    onClick={() => {
-                                        removeFromCart(item._id);
-                                        toast.success(`${item.name} removed from cart`);
-                                    }}
-                                    className="cart-item-remove"
-                                >
-                                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                                        <path
-                                            d="M6 4V2a1 1 0 011-1h6a1 1 0 011 1v2m3 0H3m2 0v12a2 2 0 002 2h6a2 2 0 002-2V4m-10 4v8m4-8v8"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                        />
-                                    </svg>
-                                </button>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     <div className="cart-summary">
                         <h2>Order Summary</h2>
                         <div className="summary-row">
                             <span>Subtotal</span>
-                            <span>₹{getCartTotal().toFixed(2)}</span>
+                            <span>₹{subtotal.toFixed(2)}</span>
                         </div>
                         <div className="summary-row">
                             <span>Shipping</span>
-                            <span>₹{settings.shippingFee.toFixed(2)}</span>
+                            <span>₹{shippingFee.toFixed(2)}</span>
                         </div>
                         <div className="summary-row">
-                            <span>Tax ({settings.taxRate}%)</span>
-                            <span>₹{(getCartTotal() * (settings.taxRate / 100)).toFixed(2)}</span>
+                            <span>Tax ({taxRate}%)</span>
+                            <span>₹{taxAmount.toFixed(2)}</span>
                         </div>
                         <div className="summary-divider"></div>
                         <div className="summary-row summary-total">
                             <span>Total</span>
-                            <span>
-                                ₹
-                                {(
-                                    getCartTotal() +
-                                    settings.shippingFee +
-                                    getCartTotal() * (settings.taxRate / 100)
-                                ).toFixed(2)}
-                            </span>
+                            <span>₹{grandTotal.toFixed(2)}</span>
                         </div>
                         <button
                             onClick={() => navigate('/checkout')}
