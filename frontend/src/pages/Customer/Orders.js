@@ -7,14 +7,12 @@ import ImageWithFallback from '../../components/Common/ImageWithFallback';
 import { DEFAULT_PRODUCT_IMAGE } from '../../constants/images';
 import './Dashboard.css';
 import logger from '../../utils/logger';
-import ChatBox from '../../components/Chat/ChatBox';
 
 const CustomerOrders = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
-    const [chatState, setChatState] = useState({ isOpen: false, peerId: null, peerName: '' });
 
     useDocumentTitle('My Orders');
 
@@ -225,32 +223,7 @@ const CustomerOrders = () => {
                                                     >
                                                         Qty: {item.quantity} × ₹{item.price}
                                                     </p>
-                                                    {item.product?.seller && (
-                                                        <button
-                                                            className="btn btn-primary btn-sm"
-                                                            style={{
-                                                                marginTop: '8px',
-                                                                fontSize: '0.9rem',
-                                                                padding: '8px 16px',
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                gap: '6px',
-                                                            }}
-                                                            onClick={() =>
-                                                                setChatState({
-                                                                    isOpen: true,
-                                                                    peerId: item.product.seller._id,
-                                                                    peerName:
-                                                                        item.store?.name ||
-                                                                        item.product.seller.name ||
-                                                                        'Seller',
-                                                                })
-                                                            }
-                                                        >
-                                                            💬 Chat with Seller
-                                                        </button>
-                                                    )}
-                                                </div>
+                                                 </div>
                                                 <div
                                                     style={{
                                                         fontWeight: '700',
@@ -316,16 +289,6 @@ const CustomerOrders = () => {
                             </button>
                         </div>
                     </div>
-                </div>
-            )}
-
-            {chatState.isOpen && (
-                <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 }}>
-                    <ChatBox
-                        peerId={chatState.peerId}
-                        peerName={chatState.peerName}
-                        onClose={() => setChatState({ isOpen: false, peerId: null, peerName: '' })}
-                    />
                 </div>
             )}
         </div>

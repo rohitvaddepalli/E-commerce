@@ -17,16 +17,16 @@ const Analytics = () => {
         setLoading(true);
         try {
             const [sales, customers, products, forecast] = await Promise.all([
-                analyticsAPI.getSalesAnalytics({ period }),
-                analyticsAPI.getCustomerAnalytics(),
-                analyticsAPI.getProductAnalytics(),
-                analyticsAPI.getInventoryForecast({ days: period }),
+                analyticsAPI.getSalesAnalytics({ period }).catch(() => ({ data: { analytics: null } })),
+                analyticsAPI.getCustomerAnalytics().catch(() => ({ data: { analytics: null } })),
+                analyticsAPI.getProductAnalytics().catch(() => ({ data: { analytics: null } })),
+                analyticsAPI.getInventoryForecast({ days: period }).catch(() => ({ data: { forecast: [] } })),
             ]);
 
-            setSalesData(sales.data.analytics);
-            setCustomerData(customers.data.analytics);
-            setProductData(products.data.analytics);
-            setForecastData(forecast.data.forecast);
+            setSalesData(sales?.data?.analytics || null);
+            setCustomerData(customers?.data?.analytics || null);
+            setProductData(products?.data?.analytics || null);
+            setForecastData(forecast?.data?.forecast || []);
         } catch (error) {
             logger.error('Error fetching analytics:', error);
         } finally {
@@ -36,33 +36,42 @@ const Analytics = () => {
 
     useEffect(() => {
         fetchAnalytics();
-    }, [period, fetchAnalytics]);
+    }, [fetchAnalytics]);
 
     const renderSalesChart = () => {
-        if (!salesData?.salesData?.length) return null;
+        const list = salesData?.salesData || [];
+        if (!list.length) {
+            return (
+                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                    No sales recorded for this period yet.
+                </div>
+            );
+        }
 
-        const maxRevenue = Math.max(...salesData.salesData.map((d) => d.revenue));
+        const maxRevenue = Math.max(...list.map((d) => d.revenue || 0), 1);
 
         return (
             <div className="chart-container">
                 <div className="chart-bars">
-                    {salesData.salesData.map((data, index) => (
+                    {list.map((data, index) => (
                         <div key={index} className="chart-bar-wrapper">
                             <div
                                 className="chart-bar"
                                 style={{
-                                    height: `${(data.revenue / maxRevenue) * 200}px`,
-                                    background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                                    height: `${Math.max(((data.revenue || 0) / maxRevenue) * 200, 6)}px`,
+                                    background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
                                 }}
-                                title={`₹${data.revenue.toFixed(2)}`}
+                                title={`₹${Number(data.revenue || 0).toFixed(2)}`}
                             >
-                                <span className="chart-value">₹{data.revenue.toFixed(0)}</span>
+                                <span className="chart-value">₹{Number(data.revenue || 0).toFixed(0)}</span>
                             </div>
                             <div className="chart-label">
-                                {new Date(data.date).toLocaleDateString('en-US', {
-                                    month: 'short',
-                                    day: 'numeric',
-                                })}
+                                {data.date
+                                    ? new Date(data.date).toLocaleDateString('en-US', {
+                                          month: 'short',
+                                          day: 'numeric',
+                                      })
+                                    : ''}
                             </div>
                         </div>
                     ))}
@@ -142,14 +151,14 @@ const Analytics = () => {
                     </div>
 
                     {/* Sales Analytics */}
-                    {activeTab === 'sales' && salesData && (
+                    {activeTab === 'sales' && (
                         <>
                             <div className="analytics-stats">
                                 <div className="stat-card">
                                     <div
                                         className="stat-icon"
                                         style={{
-                                            background: 'linear-gradient(135deg, #06D6A0, #1B9AAA)',
+                                            background: 'linear-gradient(135deg, #10b981, #059669)',
                                         }}
                                     >
                                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -162,7 +171,7 @@ const Analytics = () => {
                                         </svg>
                                     </div>
                                     <div>
-                                        <h3>₹{salesData.totalRevenue.toFixed(2)}</h3>
+                                        <h3>₹{Number(salesData?.totalRevenue ?? 0).toFixed(2)}</h3>
                                         <p>Total Revenue</p>
                                     </div>
                                 </div>
@@ -171,7 +180,7 @@ const Analytics = () => {
                                     <div
                                         className="stat-icon"
                                         style={{
-                                            background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                                            background: 'linear-gradient(135deg, #4f46e5, #4338ca)',
                                         }}
                                     >
                                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -183,7 +192,7 @@ const Analytics = () => {
                                         </svg>
                                     </div>
                                     <div>
-                                        <h3>{salesData.totalOrders}</h3>
+                                        <h3>{salesData?.totalOrders ?? 0}</h3>
                                         <p>Total Orders</p>
                                     </div>
                                 </div>
@@ -192,7 +201,7 @@ const Analytics = () => {
                                     <div
                                         className="stat-icon"
                                         style={{
-                                            background: 'linear-gradient(135deg, #FF6B35, #F77F00)',
+                                            background: 'linear-gradient(135deg, #f59e0b, #d97706)',
                                         }}
                                     >
                                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -206,7 +215,7 @@ const Analytics = () => {
                                         </svg>
                                     </div>
                                     <div>
-                                        <h3>₹{salesData.averageOrderValue.toFixed(2)}</h3>
+                                        <h3>₹{Number(salesData?.averageOrderValue ?? 0).toFixed(2)}</h3>
                                         <p>Avg Order Value</p>
                                     </div>
                                 </div>
@@ -220,14 +229,14 @@ const Analytics = () => {
                     )}
 
                     {/* Customer Analytics */}
-                    {activeTab === 'customers' && customerData && (
+                    {activeTab === 'customers' && (
                         <>
                             <div className="analytics-stats">
                                 <div className="stat-card">
                                     <div
                                         className="stat-icon"
                                         style={{
-                                            background: 'linear-gradient(135deg, #f093fb, #f5576c)',
+                                            background: 'linear-gradient(135deg, #ec4899, #db2777)',
                                         }}
                                     >
                                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -240,7 +249,7 @@ const Analytics = () => {
                                         </svg>
                                     </div>
                                     <div>
-                                        <h3>{customerData.totalCustomers}</h3>
+                                        <h3>{customerData?.totalCustomers ?? 0}</h3>
                                         <p>Total Customers</p>
                                     </div>
                                 </div>
@@ -249,7 +258,7 @@ const Analytics = () => {
                                     <div
                                         className="stat-icon"
                                         style={{
-                                            background: 'linear-gradient(135deg, #4facfe, #00f2fe)',
+                                            background: 'linear-gradient(135deg, #06b6d4, #0891b2)',
                                         }}
                                     >
                                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -262,7 +271,7 @@ const Analytics = () => {
                                         </svg>
                                     </div>
                                     <div>
-                                        <h3>{customerData.repeatCustomerRate.toFixed(1)}%</h3>
+                                        <h3>{Number(customerData?.repeatCustomerRate ?? 0).toFixed(1)}%</h3>
                                         <p>Repeat Customer Rate</p>
                                     </div>
                                 </div>
@@ -270,120 +279,138 @@ const Analytics = () => {
 
                             <div className="card">
                                 <h2>Top Customers</h2>
-                                <div className="customer-table">
-                                    <table>
-                                        <thead>
-                                            <tr>
-                                                <th>Customer</th>
-                                                <th>Orders</th>
-                                                <th>Total Spent</th>
-                                                <th>Last Order</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {customerData.topCustomers.map((customer, index) => (
-                                                <tr key={index}>
-                                                    <td>
-                                                        <div>
-                                                            <div style={{ fontWeight: '600' }}>
-                                                                {customer.name}
-                                                            </div>
-                                                            <div
-                                                                style={{
-                                                                    fontSize: '0.85rem',
-                                                                    color: 'var(--text-secondary)',
-                                                                }}
-                                                            >
-                                                                {customer.email}
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td>{customer.totalOrders}</td>
-                                                    <td
-                                                        style={{
-                                                            fontWeight: '600',
-                                                            color: 'var(--primary-color)',
-                                                        }}
-                                                    >
-                                                        ₹{customer.totalSpent.toFixed(2)}
-                                                    </td>
-                                                    <td>
-                                                        {new Date(
-                                                            customer.lastOrderDate
-                                                        ).toLocaleDateString()}
-                                                    </td>
+                                {(!customerData?.topCustomers || customerData.topCustomers.length === 0) ? (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                        No customer order data available yet.
+                                    </div>
+                                ) : (
+                                    <div className="customer-table">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Customer</th>
+                                                    <th>Orders</th>
+                                                    <th>Total Spent</th>
+                                                    <th>Last Order</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                            </thead>
+                                            <tbody>
+                                                {customerData.topCustomers.map((customer, index) => (
+                                                    <tr key={index}>
+                                                        <td>
+                                                            <div>
+                                                                <div style={{ fontWeight: '600' }}>
+                                                                    {customer.name}
+                                                                </div>
+                                                                <div
+                                                                    style={{
+                                                                        fontSize: '0.85rem',
+                                                                        color: 'var(--text-secondary)',
+                                                                    }}
+                                                                >
+                                                                    {customer.email}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td>{customer.totalOrders}</td>
+                                                        <td
+                                                            style={{
+                                                                fontWeight: '600',
+                                                                color: 'var(--primary-color)',
+                                                            }}
+                                                        >
+                                                            ₹{Number(customer.totalSpent || 0).toFixed(2)}
+                                                        </td>
+                                                        <td>
+                                                            {customer.lastOrderDate
+                                                                ? new Date(customer.lastOrderDate).toLocaleDateString()
+                                                                : 'N/A'}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}
 
                     {/* Product Analytics */}
-                    {activeTab === 'products' && productData && (
+                    {activeTab === 'products' && (
                         <>
                             <div className="card" style={{ marginBottom: 'var(--spacing-xl)' }}>
                                 <h2>Top Performing Products</h2>
-                                <div className="product-performance">
-                                    {productData.topProducts.map((product, index) => (
-                                        <div key={index} className="performance-item">
-                                            <div className="performance-rank">#{index + 1}</div>
-                                            <div className="performance-details">
-                                                <h4>{product.name}</h4>
-                                                <p>{product.category}</p>
-                                            </div>
-                                            <div className="performance-stats">
-                                                <div className="stat">
-                                                    <span className="stat-label">Sold</span>
-                                                    <span className="stat-value">
-                                                        {product.totalSold}
-                                                    </span>
+                                {(!productData?.topProducts || productData.topProducts.length === 0) ? (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                        No product sales recorded yet.
+                                    </div>
+                                ) : (
+                                    <div className="product-performance">
+                                        {productData.topProducts.map((product, index) => (
+                                            <div key={index} className="performance-item">
+                                                <div className="performance-rank">#{index + 1}</div>
+                                                <div className="performance-details">
+                                                    <h4>{product.name}</h4>
+                                                    <p>{product.category}</p>
                                                 </div>
-                                                <div className="stat">
-                                                    <span className="stat-label">Revenue</span>
-                                                    <span className="stat-value">
-                                                        ₹{product.revenue.toFixed(0)}
-                                                    </span>
+                                                <div className="performance-stats">
+                                                    <div className="stat">
+                                                        <span className="stat-label">Sold</span>
+                                                        <span className="stat-value">
+                                                            {product.totalSold}
+                                                        </span>
+                                                    </div>
+                                                    <div className="stat">
+                                                        <span className="stat-label">Revenue</span>
+                                                        <span className="stat-value">
+                                                            ₹{Number(product.revenue || 0).toFixed(0)}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
                             <div className="card">
                                 <h2>Category Performance</h2>
-                                <div className="category-grid">
-                                    {Object.entries(productData.categoryPerformance).map(
-                                        ([category, data]) => (
-                                            <div key={category} className="category-card">
-                                                <h3>{category}</h3>
-                                                <div className="category-stats">
-                                                    <div>
-                                                        <span className="label">Revenue</span>
-                                                        <span className="value">
-                                                            ₹{data.revenue.toFixed(2)}
-                                                        </span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="label">Units Sold</span>
-                                                        <span className="value">
-                                                            {data.unitsSold}
-                                                        </span>
+                                {Object.keys(productData?.categoryPerformance || {}).length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                        No category sales data recorded yet.
+                                    </div>
+                                ) : (
+                                    <div className="category-grid">
+                                        {Object.entries(productData?.categoryPerformance || {}).map(
+                                            ([category, data]) => (
+                                                <div key={category} className="category-card">
+                                                    <h3>{category}</h3>
+                                                    <div className="category-stats">
+                                                        <div>
+                                                            <span className="label">Revenue</span>
+                                                            <span className="value">
+                                                                ₹{Number(data?.revenue || 0).toFixed(2)}
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="label">Units Sold</span>
+                                                            <span className="value">
+                                                                {data?.unitsSold || 0}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        )
-                                    )}
-                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </>
                     )}
 
                     {/* Inventory Forecast */}
-                    {activeTab === 'forecast' && forecastData && (
+                    {activeTab === 'forecast' && (
                         <div className="card">
                             <h2>Inventory Forecast</h2>
                             <p
@@ -394,50 +421,60 @@ const Analytics = () => {
                             >
                                 Based on sales velocity over the last {period} days
                             </p>
-                            <div className="forecast-table">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th>Product</th>
-                                            <th>Current Stock</th>
-                                            <th>Avg Daily Sales</th>
-                                            <th>Days Until Stockout</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {forecastData
-                                            .filter((p) => p.reorderRecommended)
-                                            .map((product, index) => (
+                            {(!forecastData || forecastData.length === 0) ? (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>
+                                    No products found in inventory.
+                                </div>
+                            ) : (
+                                <div className="forecast-table">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Product</th>
+                                                <th>Current Stock</th>
+                                                <th>Avg Daily Sales</th>
+                                                <th>Days Until Stockout</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {forecastData.map((product, index) => (
                                                 <tr key={index}>
                                                     <td style={{ fontWeight: '600' }}>
                                                         {product.name}
                                                     </td>
                                                     <td>{product.currentStock}</td>
-                                                    <td>{product.averageDailySales.toFixed(2)}</td>
+                                                    <td>{Number(product.averageDailySales || 0).toFixed(2)}</td>
                                                     <td>
                                                         <span
                                                             className={
-                                                                product.daysUntilStockout < 7
+                                                                (product.daysUntilStockout || 999) < 7
                                                                     ? 'urgent'
                                                                     : 'warning'
                                                             }
                                                         >
-                                                            {product.daysUntilStockout > 0
+                                                            {(product.daysUntilStockout || 999) < 900
                                                                 ? `${product.daysUntilStockout} days`
-                                                                : 'Out of stock'}
+                                                                : 'Well-stocked'}
                                                         </span>
                                                     </td>
                                                     <td>
-                                                        <span className="badge badge-warning">
-                                                            Reorder Recommended
-                                                        </span>
+                                                        {product.reorderRecommended ? (
+                                                            <span className="badge badge-warning">
+                                                                Reorder Recommended
+                                                            </span>
+                                                        ) : (
+                                                            <span className="badge badge-success">
+                                                                Optimal Stock
+                                                            </span>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

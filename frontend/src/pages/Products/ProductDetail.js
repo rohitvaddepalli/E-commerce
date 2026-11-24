@@ -12,10 +12,7 @@ import RecentlyViewed from '../../components/Products/RecentlyViewed';
 
 // Lazy-load heavy sub-features so the main product page chunk stays lean.
 // ProductReviews: always rendered below the fold — code-split for initial JS savings.
-// ChatBox: conditionally shown; only starts downloading when the user opens chat.
 const ProductReviews = lazy(() => import('../../components/Products/ProductReviews'));
-const ChatBox = lazy(() => import('../../components/Chat/ChatBox'));
-
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -24,8 +21,7 @@ const ProductDetail = () => {
     const [quantity, setQuantity] = useState(1);
     const [loading, setLoading] = useState(true);
     const { addToCart } = useCart();
-    const { user, isAuthenticated, isSeller, isAdmin } = useAuth();
-    const [isChatOpen, setIsChatOpen] = useState(false);
+    const { isAuthenticated, isSeller, isAdmin } = useAuth();
 
     useDocumentTitle(product ? product.name : 'Product Details');
 
@@ -385,17 +381,6 @@ const ProductDetail = () => {
                             </div>
                         )}
 
-                        {isAuthenticated && product.seller && user?._id !== product.seller?._id && (
-                            <div style={{ marginTop: 'var(--spacing-lg)' }}>
-                                <button
-                                    onClick={() => setIsChatOpen(true)}
-                                    className="btn btn-outline"
-                                    style={{ width: '100%' }}
-                                >
-                                    💬 Chat with Seller
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </div>
 
@@ -405,18 +390,6 @@ const ProductDetail = () => {
 
                 <RecentlyViewed />
             </div>
-
-            {isChatOpen && product.seller && (
-                <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 }}>
-                    <Suspense fallback={null}>
-                        <ChatBox
-                            peerId={product.seller._id}
-                            peerName={product.store?.name || product.seller.name || 'Seller'}
-                            onClose={() => setIsChatOpen(false)}
-                        />
-                    </Suspense>
-                </div>
-            )}
         </div>
     );
 };

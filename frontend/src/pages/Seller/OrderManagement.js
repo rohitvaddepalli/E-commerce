@@ -4,13 +4,11 @@ import Sidebar from '../../components/Sidebar/Sidebar';
 import useDocumentTitle from '../../hooks/useDocumentTitle';
 import toast from 'react-hot-toast';
 import logger from '../../utils/logger';
-import ChatBox from '../../components/Chat/ChatBox';
 
 const OrderManagement = () => {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [expandedOrders, setExpandedOrders] = useState(new Set());
-    const [chatState, setChatState] = useState({ isOpen: false, peerId: null, peerName: '' });
     useDocumentTitle('Order Management');
 
     useEffect(() => {
@@ -166,28 +164,6 @@ const OrderManagement = () => {
                                                 >
                                                     {new Date(order.createdAt).toLocaleDateString()}{' '}
                                                     • {order.customer?.name || 'Customer'}
-                                                    {order.customer && (
-                                                        <button
-                                                            className="btn btn-primary btn-sm"
-                                                            style={{
-                                                                fontSize: '0.9rem',
-                                                                padding: '8px 16px',
-                                                                display: 'inline-flex',
-                                                                alignItems: 'center',
-                                                                gap: '6px',
-                                                            }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setChatState({
-                                                                    isOpen: true,
-                                                                    peerId: order.customer._id,
-                                                                    peerName: order.customer.name,
-                                                                });
-                                                            }}
-                                                        >
-                                                            💬 Chat with Customer
-                                                        </button>
-                                                    )}
                                                 </span>
                                             </div>
                                         </div>
@@ -398,16 +374,6 @@ const OrderManagement = () => {
                     )}
                 </div>
             </div>
-
-            {chatState.isOpen && (
-                <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 1000 }}>
-                    <ChatBox
-                        peerId={chatState.peerId}
-                        peerName={chatState.peerName}
-                        onClose={() => setChatState({ isOpen: false, peerId: null, peerName: '' })}
-                    />
-                </div>
-            )}
         </div>
     );
 };

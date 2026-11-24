@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import logger from '../../utils/logger';
 
 class ErrorBoundary extends React.Component {
@@ -52,13 +51,13 @@ class ErrorBoundary extends React.Component {
                                 >
                                     Reload Page
                                 </button>
-                                <Link
-                                    to="/"
+                                <a
+                                    href="/"
                                     className="btn btn-outline"
                                     onClick={() => this.setState({ hasError: false })}
                                 >
                                     Back to Home
-                                </Link>
+                                </a>
                             </div>
                         </div>
                     </div>
