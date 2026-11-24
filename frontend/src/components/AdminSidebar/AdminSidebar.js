@@ -166,43 +166,27 @@ const AdminSidebar = () => {
             </nav>
 
             <div className="sidebar-footer">
-                <div
-                    style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        marginBottom: '16px',
-                        padding: '0 4px',
-                    }}
-                >
+                <div className="sidebar-footer-user">
                     <img
                         src={
                             user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=admin'
                         }
                         alt={user?.name}
-                        style={{ width: '32px', height: '32px', borderRadius: '50%' }}
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
                     />
                     <div style={{ overflow: 'hidden' }}>
-                        <div
-                            style={{
-                                fontWeight: '600',
-                                fontSize: '0.9rem',
-                                whiteSpace: 'nowrap',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                            }}
-                        >
+                        <div className="sidebar-footer-name">
                             {user?.name}
                         </div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        <div className="sidebar-footer-role">
                             Administrator
                         </div>
                     </div>
                 </div>
                 <button onClick={handleLogout} className="logout-btn">
                     <svg
-                        width="20"
-                        height="20"
+                        width="18"
+                        height="18"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
